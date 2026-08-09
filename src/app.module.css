@@ -1,0 +1,59 @@
+.contentOpen {
+  pointer-events: none;
+  overflow: hidden;
+  max-height: 100%;
+}
+
+.header {
+  padding: 20px 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+
+  h1 {
+    margin: 0;
+    font-weight: 400;
+  }
+}
+
+.infoButton {
+  background-color: white;
+  color: black;
+  cursor: pointer;
+  border: none;
+  font-size: 16px;
+
+  &:focus {
+    outline-color: black;
+    offset: 2px;
+  }
+}
+
+.infoWrapper {
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  background: white;
+  max-height: 100%;
+  min-height: 100%;
+  z-index: 5;
+  color: black;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  border: none;
+
+  .infoHeader {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  .infoButton {
+    padding: 0;
+  }
+
+  h2 {
+    margin: 20px 0 0 0;
+    font-weight: 400;
+  }
+}

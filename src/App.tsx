@@ -1,122 +1,138 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useReducer, useEffect } from "react";
+import { paintings } from "./data/paintings.ts";
+import { Tile } from "./components/tile.tsx";
+import { ExpandedTile } from "./components/expanded-tile.tsx";
+import { Masonry } from "./components/masonry.tsx";
+import { Modal } from "./components/modal.tsx";
+import Styles from "./app.module.css";
 
-function App() {
-  const [count, setCount] = useState(0)
+type ContextState = {
+  selectedIndex: number | null;
+  info: "statement" | "bio" | null;
+};
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+type Action =
+  | { type: "open-info"; info: "statement" | "bio" }
+  | { type: "close-info" }
+  | { type: "open-painting"; index: number }
+  | { type: "close-painting" }
+  | { type: "next-painting" }
+  | { type: "previous-painting" };
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+function reducer(state: ContextState, action: Action): ContextState {
+  switch (action.type) {
+    case "open-info":
+      return { ...state, info: action.info };
+    case "close-info":
+      return { ...state, info: null };
+    case "open-painting":
+      return { ...state, selectedIndex: action.index };
+    case "close-painting":
+      return { ...state, selectedIndex: null };
+    case "next-painting":
+      if (state.selectedIndex === null) {
+        return state;
+      }
+      return {
+        ...state,
+        selectedIndex: (state.selectedIndex + 1) % paintings.length,
+      };
+    case "previous-painting":
+      if (state.selectedIndex === null) {
+        return state;
+      }
+      return {
+        ...state,
+        selectedIndex: (state.selectedIndex - 1 + paintings.length) % paintings.length,
+      };
+  }
 }
 
-export default App
+function App() {
+  const [state, dispatch] = useReducer(reducer, {
+    info: null,
+    selectedIndex: null,
+  });
+
+  useEffect(() => {
+    const isOpen = state.info !== null || state.selectedIndex !== null;
+    document.body.style.overflow = isOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [state.info, state.selectedIndex]);
+  return (
+    <>
+      <header
+        className={`${Styles.header} ${(state.info ?? state.selectedIndex ?? false) ? Styles.contentOpen : ""}`}
+      >
+        <h1>Matt Russo</h1>
+        <div>
+          <button
+            className={Styles.infoButton}
+            onClick={() => dispatch({ type: "open-info", info: "statement" })}
+          >
+            Statement
+          </button>
+          <button
+            className={Styles.infoButton}
+            onClick={() => dispatch({ type: "open-info", info: "bio" })}
+          >
+            Bio
+          </button>
+        </div>
+      </header>
+      <main
+        className={
+          state.info || typeof state.selectedIndex === "number" ? Styles.contentOpen : undefined
+        }
+      >
+        <Masonry
+          paintings={paintings}
+          gap={72}
+          renderItem={(painting, index) => (
+            <Tile {...painting} onClick={() => dispatch({ type: "open-painting", index })} />
+          )}
+        />
+      </main>
+      {typeof state.selectedIndex === "number" && paintings[state.selectedIndex] && (
+        <ExpandedTile
+          {...paintings[state.selectedIndex]}
+          onNext={() => dispatch({ type: "next-painting" })}
+          onPrevious={() => dispatch({ type: "previous-painting" })}
+          onClose={() => dispatch({ type: "close-painting" })}
+        />
+      )}
+      {state.info && (
+        <Modal
+          title={state.info === "statement" ? "Statement" : "Bio"}
+          onClose={() => dispatch({ type: "close-info" })}
+        >
+          {state.info === "statement" ? (
+            <>
+              <p>
+                The paintings I create are small fantasies, moments akin to daydreams and getting
+                lost in thought. A viewer might assume that the works are intimate portraits of
+                close friends or romantic partners, as is common in figurative painting or
+                portraiture, but the figures are strangers, anonymous people mostly encountered
+                online in passing.
+              </p>
+              <p>
+                I take these strangers and place them in imagined encounters, transforming the
+                original image into someone who only exists within the world of the painting. I want
+                to create familiarity and intimacy between the viewer and the subject, often
+                altering the gaze to look directly at the viewer. I want the viewer to ask
+                themselves: “What have I walked into? What does this person want from me, and what
+                do I want from them?”
+              </p>
+            </>
+          ) : (
+            <p>Matt Russo is a painter based in Amsterdam.</p>
+          )}
+        </Modal>
+      )}
+    </>
+  );
+}
+
+export default App;
